@@ -16,33 +16,39 @@ namespace graph {
         }; // enum class Color
     }; // namespace details
 
-    enum class Color {
-        Red, Blue, NoColor
-    }; // enum class Color
-
     template <typename T>
     class Vertex final {
     public:
-        Vertex(T vl) : VL_(vl) {}
-        void Set(T vl) {
-            VL_ = vl;
+        Vertex(T data) : data_(data) {}
+
+        void Set(T data) {
+            data_ = data;
         }
 
         T Get() const {
-            return VL_;
+            return data_;
         }
     private:
-        T VL_;
+        T data_;
     }; // class Vertex
 
     template <typename T>
     class Edge final {
     public:
-        Edge(T el) : EL_(el) {}
+        Edge(T data) : data_(data) {}
+
+        void Set(T data) {
+            data_ = data;
+        }
+
+        T Get() const {
+            return data_;
+        }
     private:
-        T EL_;
+        T data_;
     }; // class Edge
 
+    template <typename VertexT, typename EdgeT>
     class Graph final {
     public:
         Graph(const std::initializer_list<std::pair<size_t, size_t>> &vertices_pairs) {
@@ -58,8 +64,8 @@ namespace graph {
             edges_count_ = 2 * vertices_pairs.size();
             length_ = vertices_count_ + edges_count_;
 
-            vertices_.resize(vertices_count_, Vertex<Color>(Color::NoColor));
-            edges_.resize(edges_count_, Edge<int>(0));
+            vertices_.resize(vertices_count_, Vertex(VertexT()));
+            edges_.resize(edges_count_, Edge{EdgeT()});
 
             indices_.resize(length_);
             next_edges_.resize(length_);
@@ -105,45 +111,50 @@ namespace graph {
         void DepthFirstSearch() {
             std::vector<details::Color> colors{vertices_count_, details::Color::White};
             
-            vertices_[0].Set(Color::Blue);
-            
             for (size_t i = 0; i < vertices_count_; ++i) {
                 if (colors[i] == details::Color::White)
                     DepthFirstSearch(colors, i);
             }
         }
 
-        void BreadthFirstSearch() {
+        template <typename Visitor>
+        void BreadthFirstSearch(Visitor &visitor) {
             std::vector<details::Color> colors{vertices_count_, details::Color::White};
             
             std::queue<size_t> queue;
             queue.push(0);
             colors[0] = details::Color::Black;
-            vertices_[0].Set(Color::Blue);
 
             while (!queue.empty()) {
                 size_t current = queue.front();
                 queue.pop();
                 colors[current] = details::Color::Black;
 
-                Color color = (vertices_[current].Get() == Color::Blue) ? Color::Red : Color::Blue; 
+                visitor.VisitVertex(current, *this);
 
                 std::vector<size_t> neighbours;
                 GetNeighboringVertices(neighbours, current);
 
                 for (auto &&neighbour : neighbours) {
-                    auto tmp = vertices_[neighbour - 1U].Get();
-                    
-                    if (tmp == Color::NoColor || tmp == color)
-                        vertices_[neighbour - 1U].Set(color);
-                    else
-                        throw std::runtime_error("Graph does not dicotyledonous");
-
-                    vertices_[neighbour - 1U].Set(color);
-
                     if (colors[neighbour - 1U] == details::Color::White)
                         queue.push(neighbour - 1U);
                 }
+            }
+        }
+
+        void GetNeighboringVertices(std::vector<size_t> &neighbours, size_t vertexIndex) const {
+            if (vertexIndex > vertices_count_) {
+                throw std::out_of_range("Indices vector out of range");
+            }
+
+            if (indices_[vertexIndex] != 0U) {
+                throw std::out_of_range("The vertex does not exist");
+            }
+
+            size_t next_edge = next_edges_[vertexIndex];
+            while (next_edge != vertexIndex) {
+                neighbours.push_back(indices_[next_edge ^ 1U]);
+                next_edge = next_edges_[next_edge];
             }
         }
 
@@ -153,38 +164,17 @@ namespace graph {
         const std::vector<size_t> &GetPrevEdges() const;
     
     private:
-        void GetNeighboringVertices(std::vector<size_t> &neighbours, size_t vertex_index) const {
-            if (vertex_index > vertices_count_) {
-                throw std::out_of_range("Indices vector out of range");
-            }
-
-            if (indices_[vertex_index] != 0U) {
-                throw std::out_of_range("The vertex does not exist");
-            }
-
-            size_t next_edge = next_edges_[vertex_index];
-            while (next_edge != vertex_index) {
-                neighbours.push_back(indices_[next_edge ^ 1U]);
-                next_edge = next_edges_[next_edge];
-            }
-        }
-
         void DepthFirstSearch(std::vector<details::Color> &colors, size_t vertex_index) {
             colors[vertex_index] = details::Color::Gray;
             
             std::vector<size_t> neighbours;
             GetNeighboringVertices(neighbours, vertex_index);
             
-            Color color = (vertices_[vertex_index].Get() == Color::Blue) ? Color::Red : Color::Blue; 
-            
             for (auto &&neighbour : neighbours) {
-                vertices_[neighbour - 1U].Set(color);
-
                 if (colors[neighbour - 1U] == details::Color::White)
                     DepthFirstSearch(colors, neighbour - 1U);
                 
-                if (vertices_[neighbour - 1U].Get() != color)
-                    throw std::runtime_error("Graph does not dicotyledonous");
+                // action
             }
 
             colors[vertex_index] = details::Color::Black;
@@ -193,14 +183,15 @@ namespace graph {
         size_t length_ = 0;
         size_t vertices_count_ = 0;
         size_t edges_count_ = 0;
-        std::vector<Vertex<Color>> vertices_;
-        std::vector<Edge<int>> edges_;
+        std::vector<Vertex<VertexT>> vertices_;
+        std::vector<Edge<EdgeT>> edges_;
         std::vector<size_t> indices_;
         std::vector<size_t> next_edges_;
         std::vector<size_t> prev_edges_;
     }; // class Graph
  
-    void Graph::Print() const {
+    template <typename VertexT, typename EdgeT>
+    void Graph<VertexT, EdgeT>::Print() const {
         const int width = 5;
 
         for (size_t i = 0; i < length_; ++i) {
@@ -228,15 +219,18 @@ namespace graph {
         std::cout << std::endl;
     }
 
-    const std::vector<size_t> &Graph::GetIndices() const {
+    template <typename VertexT, typename EdgeT>
+    const std::vector<size_t> &Graph<VertexT, EdgeT>::GetIndices() const {
         return indices_;
     }
 
-    const std::vector<size_t> &Graph::GetNextEdges() const {
+    template <typename VertexT, typename EdgeT>
+    const std::vector<size_t> &Graph<VertexT, EdgeT>::GetNextEdges() const {
         return next_edges_;
     }
 
-    const std::vector<size_t> &Graph::GetPrevEdges() const {
+    template <typename VertexT, typename EdgeT>
+    const std::vector<size_t> &Graph<VertexT, EdgeT>::GetPrevEdges() const {
         return prev_edges_;
     }
 
