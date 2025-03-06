@@ -9,18 +9,57 @@
 #include <queue>        // for BFS
 
 namespace graph {
+
+    namespace details {
+        enum class Color {
+            Gray, White, Black
+        }; // enum class Color
+    }; // namespace details
+
     enum class Color {
-        Gray, White, Black
+        Red, Blue, NoColor
     }; // enum class Color
+
+    template <typename T>
+    class Vertex final {
+    public:
+        Vertex(T vl) : VL_(vl) {}
+        void Set(T vl) {
+            VL_ = vl;
+        }
+
+        T Get() const {
+            return VL_;
+        }
+    private:
+        T VL_;
+    }; // class Vertex
+
+    template <typename T>
+    class Edge final {
+    public:
+        Edge(T el) : EL_(el) {}
+    private:
+        T EL_;
+    }; // class Edge
 
     class Graph final {
     public:
         Graph(const std::initializer_list<std::pair<size_t, size_t>> &vertices_pairs) {
             for (auto &&pair : vertices_pairs)
                 vertices_count_ = std::max(vertices_count_, std::max(pair.first, pair.second));
+            
+            bool odd = false;
+            if (vertices_count_ % 2 != 0) {
+                vertices_count_++;
+                odd = true;
+            }
+                
+            edges_count_ = 2 * vertices_pairs.size();
+            length_ = vertices_count_ + edges_count_;
 
-            edges_count_ = vertices_pairs.size();
-            length_ = vertices_count_ + 2 * edges_count_;
+            vertices_.resize(vertices_count_, Vertex<Color>(Color::NoColor));
+            edges_.resize(edges_count_, Edge<int>(0));
 
             indices_.resize(length_);
             next_edges_.resize(length_);
@@ -36,6 +75,12 @@ namespace graph {
                 indices_[vertices_count_ + edges_count + 1U] = pair.second;
                 
                 edges_count += 2;
+            }
+
+            if (odd) {
+                indices_[vertices_count_ - 1U] = 0U;
+                next_edges_[vertices_count_ - 1U] = vertices_count_ - 1U;
+                prev_edges_[vertices_count_ - 1U] = vertices_count_ - 1U;
             }
 
             for (size_t i = vertices_count_, j = length_ - 1; i < length_; ++i, --j) {
@@ -57,34 +102,48 @@ namespace graph {
             }
         }
 
-        void DepthFirstSearch() const {
-            std::vector<Color> colors{vertices_count_, Color::White};
-
+        void DepthFirstSearch() {
+            std::vector<details::Color> colors{vertices_count_, details::Color::White};
+            
+            vertices_[0].Set(Color::Blue);
+            
             for (size_t i = 0; i < vertices_count_; ++i) {
-                if (colors[i] == Color::White)
+                if (colors[i] == details::Color::White)
                     DepthFirstSearch(colors, i);
             }
         }
 
-        void BreadthFirstSearch() const {
-            std::vector<Color> colors{vertices_count_, Color::White};
+        void BreadthFirstSearch() {
+            std::vector<details::Color> colors{vertices_count_, details::Color::White};
             
             std::queue<size_t> queue;
             queue.push(0);
-            colors[0] = Color::Black;
+            colors[0] = details::Color::Black;
+            vertices_[0].Set(Color::Blue);
 
             while (!queue.empty()) {
                 size_t current = queue.front();
                 queue.pop();
-                colors[current] = Color::Black;
-                // do an action
+                colors[current] = details::Color::Black;
+
+                Color color = (vertices_[current].Get() == Color::Blue) ? Color::Red : Color::Blue; 
 
                 std::vector<size_t> neighbours;
                 GetNeighboringVertices(neighbours, current);
 
-                for (auto &&neighbour : neighbours)
-                    if (colors[neighbour] == Color::White)
-                        queue.push(neighbour);
+                for (auto &&neighbour : neighbours) {
+                    auto tmp = vertices_[neighbour - 1U].Get();
+                    
+                    if (tmp == Color::NoColor || tmp == color)
+                        vertices_[neighbour - 1U].Set(color);
+                    else
+                        throw std::runtime_error("Graph does not dicotyledonous");
+
+                    vertices_[neighbour - 1U].Set(color);
+
+                    if (colors[neighbour - 1U] == details::Color::White)
+                        queue.push(neighbour - 1U);
+                }
             }
         }
 
@@ -105,28 +164,37 @@ namespace graph {
 
             size_t next_edge = next_edges_[vertex_index];
             while (next_edge != vertex_index) {
-                neighbours.push_back(indices_[next_edge ^ 1]);
+                neighbours.push_back(indices_[next_edge ^ 1U]);
                 next_edge = next_edges_[next_edge];
             }
         }
 
-        void DepthFirstSearch(std::vector<Color> &colors, size_t vertex_index) const {
-            colors[vertex_index] = Color::Gray;
+        void DepthFirstSearch(std::vector<details::Color> &colors, size_t vertex_index) {
+            colors[vertex_index] = details::Color::Gray;
             
             std::vector<size_t> neighbours;
             GetNeighboringVertices(neighbours, vertex_index);
             
-            for (auto &&neighbour : neighbours)
-                if (colors[neighbour] == Color:: White)
-                    DepthFirstSearch(colors, neighbour);
+            Color color = (vertices_[vertex_index].Get() == Color::Blue) ? Color::Red : Color::Blue; 
+            
+            for (auto &&neighbour : neighbours) {
+                vertices_[neighbour - 1U].Set(color);
 
-            colors[vertex_index] = Color::Black;
-            // do an action
+                if (colors[neighbour - 1U] == details::Color::White)
+                    DepthFirstSearch(colors, neighbour - 1U);
+                
+                if (vertices_[neighbour - 1U].Get() != color)
+                    throw std::runtime_error("Graph does not dicotyledonous");
+            }
+
+            colors[vertex_index] = details::Color::Black;
         }
 
         size_t length_ = 0;
         size_t vertices_count_ = 0;
         size_t edges_count_ = 0;
+        std::vector<Vertex<Color>> vertices_;
+        std::vector<Edge<int>> edges_;
         std::vector<size_t> indices_;
         std::vector<size_t> next_edges_;
         std::vector<size_t> prev_edges_;
