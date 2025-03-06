@@ -27,28 +27,50 @@ TEST(GraphTest, GraphCtor2) {
     ASSERT_EQ(graph.GetPrevEdges(), v3);
 }
 
-TEST(GraphTest, GraphBipartite1) {
+TEST(GraphTest, GraphBipartiteBFS1) {
     graph::Graph<int, int> graph {{1, 2}, {1, 3}};
 
-    graph::BipartiteChecker<int, int> checker;
+    graph::BipartiteVisitor<int, int> checker;
     graph.BreadthFirstSearch(checker);
     ASSERT_EQ(checker.isBipartite(), true);
 }
 
-TEST(GraphTest, GraphBipartite2) {
+TEST(GraphTest, GraphBipartiteBFS2) {
     graph::Graph<int, int> graph {{1, 2}, {1, 3}, {4, 5}, {4, 2}, {1, 5}, {6, 7}, {6, 2}, {6, 3}, {7, 1}, {7, 4}};
 
-    graph::BipartiteChecker<int, int> checker;
+    graph::BipartiteVisitor<int, int> checker;
     graph.BreadthFirstSearch(checker);
     ASSERT_EQ(checker.isBipartite(), true);
-
-    checker.PrintColors();
 }
 
-TEST(GraphTest, GraphBipartite3) {
+TEST(GraphTest, GraphBipartiteBFS3) {
     graph::Graph<int, int> graph {{1, 2}, {1, 3}, {4, 5}, {4, 2}, {1, 5}, {5, 2}};
 
-    graph::BipartiteChecker<int, int> checker;
+    graph::BipartiteVisitor<int, int> checker;
     graph.BreadthFirstSearch(checker);
     ASSERT_EQ(checker.isBipartite(), false);
+}
+
+TEST(GraphTest, GraphBipartiteDFS1) {
+    graph::Graph<int, int> graph {{1, 2}, {1, 3}};
+
+    graph::BipartiteVisitor<int, int> checker;
+    graph.DepthFirstSearch(checker);
+    ASSERT_EQ(checker.isBipartite(), true);
+}
+
+TEST(GraphTest, GraphBipartiteDFS2) {
+    graph::Graph<int, int> graph {{1, 2}, {1, 3}, {4, 5}, {4, 2}, {1, 5}, {6, 7}, {6, 2}, {6, 3}, {7, 1}, {7, 4}};
+
+    graph::BipartiteVisitor<int, int> checker;
+    graph.DepthFirstSearch(checker);
+    ASSERT_EQ(checker.isBipartite(), true);
+}
+
+TEST(GraphTest, GraphBipartiteDFS3) {
+    graph::Graph<int, int> graph {{1, 2}, {1, 3}};
+
+    graph::BipartiteVisitor<int, int> checker;
+    graph.DepthFirstSearch(checker);
+    ASSERT_EQ(checker.isBipartite(), true);
 }

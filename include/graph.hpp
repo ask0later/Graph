@@ -108,12 +108,13 @@ namespace graph {
             }
         }
 
-        void DepthFirstSearch() {
+        template <typename Visitor>
+        void DepthFirstSearch(Visitor &visitor) {
             std::vector<details::Color> colors{vertices_count_, details::Color::White};
             
             for (size_t i = 0; i < vertices_count_; ++i) {
                 if (colors[i] == details::Color::White)
-                    DepthFirstSearch(colors, i);
+                    DepthFirstSearch(colors, i, visitor);
             }
         }
 
@@ -164,17 +165,18 @@ namespace graph {
         const std::vector<size_t> &GetPrevEdges() const;
     
     private:
-        void DepthFirstSearch(std::vector<details::Color> &colors, size_t vertex_index) {
+        template <typename Visitor>
+        void DepthFirstSearch(std::vector<details::Color> &colors, size_t vertex_index, Visitor &visitor) {
             colors[vertex_index] = details::Color::Gray;
             
             std::vector<size_t> neighbours;
             GetNeighboringVertices(neighbours, vertex_index);
+
+            visitor.VisitVertex(vertex_index, *this);
             
             for (auto &&neighbour : neighbours) {
                 if (colors[neighbour - 1U] == details::Color::White)
-                    DepthFirstSearch(colors, neighbour - 1U);
-                
-                // action
+                    DepthFirstSearch(colors, neighbour - 1U, visitor);
             }
 
             colors[vertex_index] = details::Color::Black;
