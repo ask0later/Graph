@@ -64,35 +64,31 @@ namespace graph {
         std::map<size_t, char> colors_;
     }; // class BipartiteVisitor
 
-    // template <typename VertexT, typename EdgeT>
-    // class BipartiteChecker {
-    // public:
-    //     enum class CheckingPolicy {
-    //         BFS = 0,
-    //         DFS = 1
-    //     }; // enum CheckingPolicy
+    enum class CheckingPolicy {
+        BFS = 0,
+        DFS = 1
+    }; // enum CheckingPolicy
 
-    //     template <CheckingPolicy policy>
-    //     bool isBipartite() const
-    //     {
-    //         throw std::logic_error("Unknown policy");
-    //     }
+    template <typename VertexT, typename EdgeT>
+    class BipartiteChecker {
+    public:
+        bool isBipartite(const Graph<VertexT, EdgeT> &graph, CheckingPolicy policy) const {
+            BipartiteVisitor<VertexT, EdgeT> visitor;
+            switch (policy) {
+                case CheckingPolicy::BFS:
+                    graph.BreadthFirstSearch(visitor);
+                    break;
+                case CheckingPolicy::DFS:
+                    graph.DepthFirstSearch(visitor);
+                    break;
+                default:
+                    throw std::logic_error("Incorrect checking policy");
+            }
+            
+            return visitor.isBipartite();
+        }
 
-    //     template <>
-    //     bool isBipartite<CheckingPolicy::BFS>(const Graph<VertexT, EdgeT> &graph) const {
-    //         BipartiteVisitor<VertexT, EdgeT> checker;
-    //         graph.BreadthFirstSearch(checker);
-    //         return checker.isBipartite();
-    //     }
-
-    //     template <>
-    //     bool isBipartite<CheckingPolicy::DFS>(const Graph<VertexT, EdgeT> &graph) const {
-    //         BipartiteVisitor<VertexT, EdgeT> checker;
-    //         graph.DepthFirstSearch(checker);
-    //         return checker.isBipartite();
-    //     }
-
-    // }; // BipartiteChecker
+    }; // BipartiteChecker
 
 
 } // namespace graph

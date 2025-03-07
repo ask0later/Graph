@@ -109,7 +109,7 @@ namespace graph {
         }
 
         template <typename Visitor>
-        void DepthFirstSearch(Visitor &visitor) {
+        void DepthFirstSearch(Visitor &visitor) const {
             std::vector<details::Color> colors{vertices_count_, details::Color::White};
             
             for (size_t i = 0; i < vertices_count_; ++i) {
@@ -119,7 +119,7 @@ namespace graph {
         }
 
         template <typename Visitor>
-        void BreadthFirstSearch(Visitor &visitor) {
+        void BreadthFirstSearch(Visitor &visitor) const {
             std::vector<details::Color> colors{vertices_count_, details::Color::White};
             
             std::queue<size_t> queue;
@@ -166,7 +166,7 @@ namespace graph {
     
     private:
         template <typename Visitor>
-        void DepthFirstSearch(std::vector<details::Color> &colors, size_t vertex_index, Visitor &visitor) {
+        void DepthFirstSearch(std::vector<details::Color> &colors, size_t vertex_index, Visitor &visitor) const {
             colors[vertex_index] = details::Color::Gray;
             
             std::vector<size_t> neighbours;
