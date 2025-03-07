@@ -100,7 +100,6 @@ TEST(GraphTest, GraphBipartiteBFS3) {
 
 TEST(GraphTest, GraphBipartiteDFS1) {
     graph::Graph<int, int> graph {{1, 2}, {1, 3}};
-    std::cout << graph << std::endl;
     graph::BipartiteVisitor<int, int> visitor;
     graph::BipartiteChecker<int, int> checker(visitor);
     bool isBipartite = checker.isBipartite(graph, graph::CheckingPolicy::DFS);
