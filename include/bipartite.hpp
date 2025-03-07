@@ -37,12 +37,8 @@ namespace graph {
             }
         }
 
-        auto begin() {
-            return colors_.begin();
-        }
-
-        auto end() {
-            return colors_.end();
+        inline auto GetColors() const {
+            return colors_;
         }
 
         bool isBipartite() const {
@@ -81,6 +77,11 @@ namespace graph {
             
             return visitor_.isBipartite();
         }
+
+        inline auto GetColors() const {
+            return visitor_.GetColors();
+        }
+
     private:
         BipartiteVisitor<VertexT, EdgeT> &visitor_;
     }; // BipartiteChecker

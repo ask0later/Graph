@@ -13,7 +13,7 @@ int main() try {
         throw std::runtime_error("Graph is not bipartite");
     
     std::string output;
-    for (auto&& elem : visitor) {
+    for (auto&& elem : checker.GetColors()) {
         output += std::to_string(elem.first + 1);
         output += (elem.second == 0) ? " b " : " r ";
     }
