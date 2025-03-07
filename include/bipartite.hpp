@@ -28,34 +28,27 @@ namespace graph {
             graph.GetNeighboringVertices(neighborsIndices, vertexIndex);
 
             for (auto&& neighborIndex : neighborsIndices) {
-                if (colors_.count(neighborIndex - 1) == 0) {
-                    colors_[neighborIndex - 1] = 1 - colors_[vertexIndex];
-                }
-                else if (colors_[neighborIndex - 1] == colors_[vertexIndex]) {
+                if (colors_.count(neighborIndex - 1U) == 0) {
+                    colors_[neighborIndex - 1U] = 1 - colors_[vertexIndex];
+                } else if (colors_[neighborIndex - 1U] == colors_[vertexIndex]) {
                     isBipartite_ = false;
                     return;
                 }
             }
         }
 
-        void PrintColors() const {
-            if (colors_.size() < 1)
-                throw std::runtime_error("Colors are empty");
-            if (!isBipartite_)
-                throw std::runtime_error("Graph is not bipartite");
+        auto begin() {
+            return colors_.begin();
+        }
 
-            for (auto&& elem : colors_) {
-                char color = elem.second;
-                std::cout << elem.first + 1 << " ";
-                if (color == 0)
-                    std::cout << "b ";
-                else
-                    std::cout << "r ";
-            }
-            std::cout << std::endl;
+        auto end() {
+            return colors_.end();
         }
 
         bool isBipartite() const {
+            if (colors_.size() < 1)
+                throw std::runtime_error("Colors are empty");
+
             return isBipartite_;
         }
 
@@ -72,22 +65,24 @@ namespace graph {
     template <typename VertexT, typename EdgeT>
     class BipartiteChecker {
     public:
+        BipartiteChecker(BipartiteVisitor<VertexT, EdgeT> &visitor) : visitor_(visitor) {}
+
         bool isBipartite(const Graph<VertexT, EdgeT> &graph, CheckingPolicy policy) const {
-            BipartiteVisitor<VertexT, EdgeT> visitor;
             switch (policy) {
                 case CheckingPolicy::BFS:
-                    graph.BreadthFirstSearch(visitor);
+                    graph.BreadthFirstSearch(visitor_);
                     break;
                 case CheckingPolicy::DFS:
-                    graph.DepthFirstSearch(visitor);
+                    graph.DepthFirstSearch(visitor_);
                     break;
                 default:
                     throw std::logic_error("Incorrect checking policy");
             }
             
-            return visitor.isBipartite();
+            return visitor_.isBipartite();
         }
-
+    private:
+        BipartiteVisitor<VertexT, EdgeT> &visitor_;
     }; // BipartiteChecker
 
 
