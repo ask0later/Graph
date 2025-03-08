@@ -84,50 +84,58 @@ namespace graph {
             FillTable();
         }
 
-        template <typename Iterator>
+        template <typename Iterator, typename = std::enable_if_t<std::is_same_v<
+                                     typename std::iterator_traits<Iterator>::value_type,
+                                     std::pair<size_t, size_t>>>>
         Graph(Iterator begin, Iterator end) {
-            using ElementType = typename std::iterator_traits<Iterator>::value_type;
-            static_assert(std::is_same_v<ElementType, std::pair<size_t, size_t>> || 
-                          std::is_same_v<ElementType, std::tuple<size_t, size_t, EdgeT>>,
-                          "Iterator type is not supported");
-
-            if constexpr (std::is_same_v<ElementType, std::pair<size_t, size_t>>) {
-                for (auto it = begin; it != end; ++it) {
-                    edges_.emplace_back(EdgeT(), it->first, it->second);
-                    verticesCount_ = std::max(verticesCount_, std::max(it->first, it->second));                
-                }
-            } else {
-                for (auto it = begin; it != end; ++it) {
-                    auto fVertexIndex = std::get<0>(*it), sVertexIndex = std::get<1>(*it);
-                    edges_.emplace_back(std::get<EdgeT>(*it), fVertexIndex, sVertexIndex);
-                    verticesCount_ = std::max(verticesCount_, std::max(fVertexIndex, sVertexIndex));
-                }
+            for (auto it = begin; it != end; ++it) {
+                edges_.emplace_back(EdgeT(), it->first, it->second);
+                verticesCount_ = std::max(verticesCount_, std::max(it->first, it->second));                
             }
 
             edgesCount_ = edges_.size();
             FillTable();
         }
 
-        template <typename Container>
-        Graph(const Container &data) {
-            using ElementType = typename std::iterator_traits<typename Container::iterator>::value_type;
-            static_assert(std::is_same_v<ElementType, std::pair<size_t, size_t>> || 
-                          std::is_same_v<ElementType, std::tuple<size_t, size_t, EdgeT>>,
-                          "Iterator type in container is not supported");
-            
-            if constexpr (std::is_same_v<ElementType, std::pair<size_t, size_t>>) {
-                for (auto &&pair : data) {
-                    edges_.emplace_back(EdgeT(), pair.first, pair.second);
-                    verticesCount_ = std::max(verticesCount_, std::max(pair.first, pair.second));                
-                }
-            } else {
-                for (auto &&tuple : data) {
-                    auto fVertexIndex = std::get<0>(tuple), sVertexIndex = std::get<1>(tuple);
-                    edges_.emplace_back(std::get<EdgeT>(tuple), fVertexIndex, sVertexIndex);
-                    verticesCount_ = std::max(verticesCount_, std::max(fVertexIndex, sVertexIndex));
-                }
+        template <typename Iterator, typename = std::enable_if_t<std::is_same_v<
+                                     typename std::iterator_traits<Iterator>::value_type,
+                                     std::tuple<size_t, size_t, EdgeT>>>,
+                                     int>
+        Graph(Iterator begin, Iterator end) {
+            for (auto it = begin; it != end; ++it) {
+                auto fVertexIndex = std::get<0>(*it), sVertexIndex = std::get<1>(*it);
+                edges_.emplace_back(std::get<EdgeT>(*it), fVertexIndex, sVertexIndex);
+                verticesCount_ = std::max(verticesCount_, std::max(fVertexIndex, sVertexIndex));
             }
-            
+
+            edgesCount_ = edges_.size();
+            FillTable();
+        }
+
+        template <typename Container, typename = std::enable_if_t<std::is_same_v<
+                                      typename std::iterator_traits<typename Container::iterator>::value_type,
+                                      std::pair<size_t, size_t>>>>
+        Graph(const Container &data) {
+            for (auto &&pair : data) {
+                edges_.emplace_back(EdgeT(), pair.first, pair.second);
+                verticesCount_ = std::max(verticesCount_, std::max(pair.first, pair.second));                
+            }
+
+            edgesCount_ = edges_.size();
+            FillTable();
+        }
+
+        template <typename Container, typename = std::enable_if_t<std::is_same_v<
+                                      typename std::iterator_traits<typename Container::iterator>::value_type,
+                                      std::tuple<size_t, size_t, EdgeT>>>,
+                                      int>
+        Graph(const Container &data) {
+            for (auto &&tuple : data) {
+                auto fVertexIndex = std::get<0>(tuple), sVertexIndex = std::get<1>(tuple);
+                edges_.emplace_back(std::get<EdgeT>(tuple), fVertexIndex, sVertexIndex);
+                verticesCount_ = std::max(verticesCount_, std::max(fVertexIndex, sVertexIndex));
+            }
+
             edgesCount_ = edges_.size();
             FillTable();
         }
