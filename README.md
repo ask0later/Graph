@@ -38,12 +38,12 @@ cmake --build build --target tests
 
 After that, run:
 ```
-./build/tests/tests
+ctest --test-dir build
 ```
 
 ### End to end
 
 If you want to run end-to-end tests, type it:
 ```
-python3 tests/end-to-end/check_tests.py
+python3 tests/check_end_to_end.py
 ```
