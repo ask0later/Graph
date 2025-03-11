@@ -348,8 +348,10 @@ namespace graph {
         prevEdges_.resize(length_);
 
         AddVertexToTable(verticesCount_);
-        nextEdges_[verticesCount_ - 1U] = verticesCount_ - 1U;
-        prevEdges_[verticesCount_ - 1U] = verticesCount_ - 1U;
+        for (size_t i = 0; i < verticesCount_; ++i) {
+            nextEdges_[i] = i;
+            prevEdges_[i] = i;
+        }
         
         for (auto &&edge : edges_) {
             size_t fVertexIndex = edge.GetFirstVertex(), \
