@@ -3,7 +3,7 @@ from sys import executable
 
 num_test = 1
 is_ok = True
-for i in range(1, 6):
+for i in range(1, 12):
     str_data =  "tests/end-to-end/" + str(i) + ".dat"
     file_in = open(str_data, "r")
     str_ans = "tests/end-to-end/" + str(i) + ".ans"
