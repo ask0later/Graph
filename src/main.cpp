@@ -15,9 +15,14 @@ int main() try {
     }
     
     std::string output;
+    size_t prev = 0U;
     for (auto&& elem : checker.GetColors()) {
+        while (prev < elem.first)
+            output += std::to_string(prev++ + 1U) + " b ";
+
         output += std::to_string(elem.first + 1) + " ";
         output += (elem.second == 0) ? "b " : "r ";
+        prev++;
     }
     output.erase(std::prev(output.end()));
     std::cout << output << std::endl;
