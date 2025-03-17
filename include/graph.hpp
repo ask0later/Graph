@@ -264,20 +264,21 @@ namespace graph {
     template <typename VertexT, typename EdgeT>
     std::istream &Graph<VertexT, EdgeT>::Read(std::istream &in) {
         char dummy;
-        size_t fVertexIndex = 0, sVertexIndex = 0;
+        int fVertexIndex = 0, sVertexIndex = 0;
         int edgeWeight = 0;
-
-        while (true) {
-            if (in >> fVertexIndex >> dummy >> dummy >> sVertexIndex >> dummy >> edgeWeight) {
-                edges_.emplace_back(edgeWeight ,fVertexIndex, sVertexIndex);
-                verticesCount_ = std::max(verticesCount_, std::max(fVertexIndex, sVertexIndex));
-            } else if (in.eof()) {
-                break;
-            } else {
+        
+        while (!in.eof()) {
+            in >> fVertexIndex >> std::ws >> dummy >> dummy >> std::ws >> sVertexIndex >> std::ws >> dummy >> edgeWeight;
+            
+            if (!in.good())
                 throw std::runtime_error("Incorrect input");
-            }
+            else if (fVertexIndex <= 0 || sVertexIndex <= 0)
+                throw std::runtime_error("Index must be greater than zero");
+            
+            edges_.emplace_back(edgeWeight ,fVertexIndex, sVertexIndex);
+            verticesCount_ = std::max(verticesCount_, static_cast<size_t>(std::max(fVertexIndex, sVertexIndex))); 
         }
-
+        
         edgesCount_ = edges_.size();
         FillTable();
         return in;
