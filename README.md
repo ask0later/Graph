@@ -25,25 +25,13 @@ After that, you can run main target program:
 
 ## Tests
 
-### Unit
-If you want to run unit tests, generate Makefiles with the WITH_TESTS flag:
+### Unit & End to end
+If you want to run unit and end-to-end tests, generate Makefiles with the WITH_TESTS flag:
 ```
 cmake [...] -DWITH_TESTS=1
-```
-
-Then build `tests` target:
-```
-cmake --build build --target tests
 ```
 
 After that, run:
 ```
 ctest --test-dir build
-```
-
-### End to end
-
-If you want to run end-to-end tests, type it:
-```
-python3 tests/check_end_to_end.py
 ```
