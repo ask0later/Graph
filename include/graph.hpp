@@ -263,18 +263,20 @@ namespace graph {
 
     template <typename VertexT, typename EdgeT>
     std::istream &Graph<VertexT, EdgeT>::Read(std::istream &in) {
-        char dummy;
         int fVertexIndex = 0, sVertexIndex = 0;
         int edgeWeight = 0;
-        
+        std::string str;
+        char dummy;
         while (!in.eof()) {
-            in >> fVertexIndex >> std::ws >> dummy >> dummy >> std::ws >> sVertexIndex >> std::ws >> dummy >> edgeWeight;
-            
-            if (!in.good())
+            if (!(in >> fVertexIndex >> str >> sVertexIndex >> dummy >> edgeWeight &&
+                str == "--" && dummy == ','))
                 throw std::runtime_error("Incorrect input");
-            else if (fVertexIndex <= 0 || sVertexIndex <= 0)
-                throw std::runtime_error("Index must be greater than zero");
+
+            if (fVertexIndex <= 0 || sVertexIndex <= 0)
+                 throw std::runtime_error("Index must be greater than zero");
             
+            in >> std::ws;
+
             edges_.emplace_back(edgeWeight ,fVertexIndex, sVertexIndex);
             verticesCount_ = std::max(verticesCount_, static_cast<size_t>(std::max(fVertexIndex, sVertexIndex))); 
         }
