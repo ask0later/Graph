@@ -76,7 +76,7 @@ TEST(GraphTest, GraphCtor4) {
 
 TEST(GraphTest, GraphBipartiteBFS1) {
     graph::Graph<int, int> graph {{1, 2}, {1, 3}};
-    graph::BipartiteVisitor<int, int> visitor;
+    graph::BipartiteVisitor<int, int> visitor(graph.GetVerticesCount());
     graph::BipartiteChecker<int, int> checker(visitor);
     bool isBipartite = checker.isBipartite(graph, graph::CheckingPolicy::BFS);
     ASSERT_EQ(isBipartite, true);
@@ -84,7 +84,7 @@ TEST(GraphTest, GraphBipartiteBFS1) {
 
 TEST(GraphTest, GraphBipartiteBFS2) {
     graph::Graph<int, int> graph {{1, 2}, {1, 3}, {4, 5}, {4, 2}, {1, 5}, {6, 7}, {6, 2}, {6, 3}, {7, 1}, {7, 4}};
-    graph::BipartiteVisitor<int, int> visitor;
+    graph::BipartiteVisitor<int, int> visitor(graph.GetVerticesCount());
     graph::BipartiteChecker<int, int> checker(visitor);
     bool isBipartite = checker.isBipartite(graph, graph::CheckingPolicy::BFS);
     ASSERT_EQ(isBipartite, true);
@@ -92,7 +92,7 @@ TEST(GraphTest, GraphBipartiteBFS2) {
 
 TEST(GraphTest, GraphBipartiteBFS3) {
     graph::Graph<int, int> graph {{1, 2}, {1, 3}, {4, 5}, {4, 2}, {1, 5}, {5, 2}};
-    graph::BipartiteVisitor<int, int> visitor;
+    graph::BipartiteVisitor<int, int> visitor(graph.GetVerticesCount());
     graph::BipartiteChecker<int, int> checker(visitor);
     bool isBipartite = checker.isBipartite(graph, graph::CheckingPolicy::BFS);
     ASSERT_EQ(isBipartite, false);
@@ -100,7 +100,7 @@ TEST(GraphTest, GraphBipartiteBFS3) {
 
 TEST(GraphTest, GraphBipartiteDFS1) {
     graph::Graph<int, int> graph {{1, 2}, {1, 3}};
-    graph::BipartiteVisitor<int, int> visitor;
+    graph::BipartiteVisitor<int, int> visitor(graph.GetVerticesCount());
     graph::BipartiteChecker<int, int> checker(visitor);
     bool isBipartite = checker.isBipartite(graph, graph::CheckingPolicy::DFS);
     ASSERT_EQ(isBipartite, true);
@@ -108,7 +108,7 @@ TEST(GraphTest, GraphBipartiteDFS1) {
 
 TEST(GraphTest, GraphBipartiteDFS2) {
     graph::Graph<int, int> graph {{1, 2}, {1, 3}, {4, 5}, {4, 2}, {1, 5}, {6, 7}, {6, 2}, {6, 3}, {7, 1}, {7, 4}};
-    graph::BipartiteVisitor<int, int> visitor;
+    graph::BipartiteVisitor<int, int> visitor(graph.GetVerticesCount());
     graph::BipartiteChecker<int, int> checker(visitor);
     bool isBipartite = checker.isBipartite(graph, graph::CheckingPolicy::DFS);
     ASSERT_EQ(isBipartite, true);
@@ -116,7 +116,7 @@ TEST(GraphTest, GraphBipartiteDFS2) {
 
 TEST(GraphTest, GraphBipartiteDFS3) {
     graph::Graph<int, int> graph {{1, 2}, {1, 3}, {4, 5}, {4, 2}, {1, 5}, {5, 2}};
-    graph::BipartiteVisitor<int, int> visitor;
+    graph::BipartiteVisitor<int, int> visitor(graph.GetVerticesCount());
     graph::BipartiteChecker<int, int> checker(visitor);
     bool isBipartite = checker.isBipartite(graph, graph::CheckingPolicy::DFS);
     ASSERT_EQ(isBipartite, false);
