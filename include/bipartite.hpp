@@ -2,6 +2,7 @@
 
 #include "graph.hpp"
 #include <map>
+#include <unordered_set>
 
 namespace graph {
 
@@ -15,23 +16,22 @@ namespace graph {
     template <typename VertexT, typename EdgeT>
     class BipartiteVisitor : public GraphVisitor<VertexT, EdgeT> {
     public:
-        BipartiteVisitor() {
+        BipartiteVisitor(size_t verticesCount) : isBipartite_(true), verticesCount_(verticesCount), previousVertices_(verticesCount, -1) {
             colors_[0] = 0;
-            isBipartite_ = true;
         }
 
         void VisitVertex(size_t vertexIndex, const Graph<VertexT, EdgeT> &graph) override {
             if (!isBipartite_)
                 return;
             
-            std::vector<size_t> neighborsIndices;
-            graph.GetNeighboringVertices(neighborsIndices, vertexIndex);
-
-            for (auto&& neighborIndex : neighborsIndices) {
+            for (auto &&neighborIndex : graph.GetNeighboringVertices(vertexIndex)) {
                 if (colors_.count(neighborIndex - 1U) == 0) {
+                    previousVertices_[neighborIndex - 1U] = vertexIndex;
                     colors_[neighborIndex - 1U] = 1 - colors_[vertexIndex];
                 } else if (colors_[neighborIndex - 1U] == colors_[vertexIndex]) {
                     isBipartite_ = false;
+                    FindOddCycle(vertexIndex, neighborIndex - 1U);
+
                     return;
                 }
             }
@@ -48,9 +48,36 @@ namespace graph {
             return isBipartite_;
         }
 
+        std::vector<size_t> &GetOddCycle() {
+            return cycle_;
+        }
+
     private:
+        void FindOddCycle(size_t first, size_t second) {
+            std::unordered_set<int> visited;
+            
+            for (int i = first; i != -1; i = previousVertices_[i])
+                visited.insert(i);
+
+            std::vector<int> tempPath;
+            int commonVertex = -1;
+            for (int i = second; i != -1; i = previousVertices_[i]) {
+                tempPath.push_back(i + 1U);
+                if (visited.count(i)) {
+                    commonVertex = i;
+                    break;
+                }
+            }
+            cycle_.insert(cycle_.end(), tempPath.rbegin(), tempPath.rend());
+
+            for (; first != commonVertex; first = previousVertices_[first])
+                cycle_.push_back(first + 1U);
+        }
+        size_t verticesCount_;
         bool isBipartite_ = true;
         std::map<size_t, char> colors_;
+        std::vector<size_t> cycle_;
+        std::vector<int> previousVertices_;
     }; // class BipartiteVisitor
 
     enum class CheckingPolicy {
@@ -85,6 +112,4 @@ namespace graph {
     private:
         BipartiteVisitor<VertexT, EdgeT> &visitor_;
     }; // BipartiteChecker
-
-
 } // namespace graph
