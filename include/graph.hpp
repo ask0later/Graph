@@ -140,7 +140,6 @@ namespace graph {
             FillTable();
         }
 
-
         template <typename Visitor>
         void DepthFirstSearch(Visitor &visitor) const {
             std::vector<details::Color> colors{verticesCount_, details::Color::White};
@@ -165,18 +164,14 @@ namespace graph {
                 colors[current] = details::Color::Black;
 
                 visitor.VisitVertex(current, *this);
-
-                std::vector<size_t> neighbours;
-                GetNeighboringVertices(neighbours, current);
-
-                for (auto &&neighbour : neighbours) {
+                for (auto &&neighbour : GetNeighboringVertices(current)) {
                     if (colors[neighbour - 1U] == details::Color::White)
                         queue.push(neighbour - 1U);
                 }
             }
         }
 
-        void GetNeighboringVertices(std::vector<size_t> &neighbours, size_t vertexIndex) const {
+        std::vector<size_t> GetNeighboringVertices(size_t vertexIndex) const {
             if (vertexIndex > verticesCount_) {
                 throw std::out_of_range("Indices vector out of range");
             }
@@ -185,11 +180,15 @@ namespace graph {
                 throw std::out_of_range("The vertex does not exist");
             }
 
+            std::vector<size_t> neighbours;
             size_t nextEdge = nextEdges_[vertexIndex];
+            
             while (nextEdge != vertexIndex) {
                 neighbours.push_back(indices_[nextEdge ^ 1U]);
                 nextEdge = nextEdges_[nextEdge];
             }
+
+            return neighbours;
         }
 
         friend std::ostream &operator<<(std::ostream &out, const Graph<VertexT, EdgeT> &graph) {
@@ -198,6 +197,10 @@ namespace graph {
 
         friend std::istream &operator>>(std::istream &in, Graph<VertexT, EdgeT> &graph) {
             return graph.Read(in);
+        }
+
+        size_t GetVerticesCount() const {
+            return verticesCount_;
         }
         
         const std::vector<size_t> &GetIndices() const;
@@ -211,13 +214,9 @@ namespace graph {
         template <typename Visitor>
         void DepthFirstSearch(Visitor &visitor, std::vector<details::Color> &colors, size_t vertexIndex) const {
             colors[vertexIndex] = details::Color::Gray;
-            
-            std::vector<size_t> neighbours;
-            GetNeighboringVertices(neighbours, vertexIndex);
-            
             visitor.VisitVertex(vertexIndex, *this);
 
-            for (auto &&neighbour : neighbours) {
+            for (auto &&neighbour : GetNeighboringVertices(vertexIndex)) {
                 if (colors[neighbour - 1U] == details::Color::White)
                     DepthFirstSearch(visitor, colors, neighbour - 1U);
             }
