@@ -272,7 +272,7 @@ namespace graph {
                 throw std::runtime_error("Incorrect input");
 
             if (fVertexIndex <= 0 || sVertexIndex <= 0)
-                 throw std::runtime_error("Index must be greater than zero");
+                throw std::runtime_error("Vertex index must be greater than zero");
             
             in >> std::ws;
 
