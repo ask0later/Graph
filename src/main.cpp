@@ -9,7 +9,7 @@ int main() try {
     graph::BipartiteVisitor<int, int> visitor(graph.GetVerticesCount());
     graph::BipartiteChecker<int, int> checker(visitor);
     
-    if (!checker.isBipartite(graph, graph::CheckingPolicy::DFS)) {
+    if (!checker.isBipartite(graph, graph::CheckingPolicy::BFS)) {
         std::cout << "Graph is not bipartite" << std::endl;
         for (auto &&elem : visitor.GetOddCycle())
             std::cout << elem << " "; std::cout << std::endl;
