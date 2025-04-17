@@ -9,6 +9,9 @@
 #include <queue>        // for BFS
 #include <tuple>
 #include <cassert>
+#include <span>
+#include <concepts>
+#include <iterator>
 
 namespace graph {
     namespace details {
@@ -60,10 +63,14 @@ namespace graph {
 
     template <typename VertexT, typename EdgeT>
     class Graph final {
+        using VertexIndex = size_t;
+        using VertexPair = std::pair<VertexIndex, VertexIndex>;
+        using VertexPairWithEdge = std::tuple<VertexIndex, VertexIndex, EdgeT>;
+
     public:
         Graph() = default;
         
-        Graph(const std::initializer_list<std::pair<size_t, size_t>> &data) {
+        Graph(const std::initializer_list<VertexPair> &data) {
             for (auto &&pair : data) {
                 edges_.emplace_back(EdgeT(), pair.first, pair.second);
                 verticesCount_ = std::max(verticesCount_, std::max(pair.first, pair.second));                
@@ -73,7 +80,7 @@ namespace graph {
             FillTable();
         }
 
-        Graph(const std::initializer_list<std::tuple<size_t, size_t, EdgeT>> &data) {
+        Graph(const std::initializer_list<VertexPairWithEdge> &data) {
             for (auto &&tuple : data) {
                 auto fVertexIndex = std::get<0>(tuple), sVertexIndex = std::get<1>(tuple);
                 edges_.emplace_back(std::get<EdgeT>(tuple), fVertexIndex, sVertexIndex);
@@ -84,9 +91,8 @@ namespace graph {
             FillTable();
         }
 
-        template <typename Iterator, typename = std::enable_if_t<std::is_same_v<
-                                     typename std::iterator_traits<Iterator>::value_type,
-                                     std::pair<size_t, size_t>>>>
+        template <std::input_iterator Iterator>
+        requires std::is_same_v<std::iter_value_t<Iterator>, VertexPair>
         Graph(Iterator begin, Iterator end) {
             for (auto it = begin; it != end; ++it) {
                 edges_.emplace_back(EdgeT(), it->first, it->second);
@@ -97,10 +103,8 @@ namespace graph {
             FillTable();
         }
 
-        template <typename Iterator, typename = std::enable_if_t<std::is_same_v<
-                                     typename std::iterator_traits<Iterator>::value_type,
-                                     std::tuple<size_t, size_t, EdgeT>>>,
-                                     int>
+        template <std::input_iterator Iterator>
+        requires std::is_same_v<std::iter_value_t<Iterator>, VertexPairWithEdge>
         Graph(Iterator begin, Iterator end) {
             for (auto it = begin; it != end; ++it) {
                 auto fVertexIndex = std::get<0>(*it), sVertexIndex = std::get<1>(*it);
@@ -112,9 +116,8 @@ namespace graph {
             FillTable();
         }
 
-        template <typename Container, typename = std::enable_if_t<std::is_same_v<
-                                      typename std::iterator_traits<typename Container::iterator>::value_type,
-                                      std::pair<size_t, size_t>>>>
+        template <typename Container>
+        requires std::is_same_v<std::iter_value_t<typename Container::iterator>, VertexPair>
         Graph(const Container &data) {
             for (auto &&pair : data) {
                 edges_.emplace_back(EdgeT(), pair.first, pair.second);
@@ -125,10 +128,8 @@ namespace graph {
             FillTable();
         }
 
-        template <typename Container, typename = std::enable_if_t<std::is_same_v<
-                                      typename std::iterator_traits<typename Container::iterator>::value_type,
-                                      std::tuple<size_t, size_t, EdgeT>>>,
-                                      int>
+        template <typename Container>
+        requires std::is_same_v<std::iter_value_t<typename Container::iterator>, VertexPairWithEdge>
         Graph(const Container &data) {
             for (auto &&tuple : data) {
                 auto fVertexIndex = std::get<0>(tuple), sVertexIndex = std::get<1>(tuple);
@@ -203,9 +204,9 @@ namespace graph {
             return verticesCount_;
         }
         
-        const std::vector<size_t> &GetIndices() const;
-        const std::vector<size_t> &GetNextEdges() const;
-        const std::vector<size_t> &GetPrevEdges() const;
+        std::span<const size_t> GetIndices() const;
+        std::span<const size_t> GetNextEdges() const;
+        std::span<const size_t> GetPrevEdges() const;
     
     private:
         std::ostream &Print(std::ostream &out) const;
@@ -243,7 +244,7 @@ namespace graph {
  
     template <typename VertexT, typename EdgeT>
     std::ostream &Graph<VertexT, EdgeT>::Print(std::ostream &out) const {
-        const int width = 5;
+        constexpr int width = 5;
 
         for (size_t i = 0; i < length_; ++i)
             out << std::right << std::setw(width) << i; out << std::endl;
@@ -286,17 +287,17 @@ namespace graph {
     }
 
     template <typename VertexT, typename EdgeT>
-    const std::vector<size_t> &Graph<VertexT, EdgeT>::GetIndices() const {
+    std::span<const size_t> Graph<VertexT, EdgeT>::GetIndices() const {
         return indices_;
     }
 
     template <typename VertexT, typename EdgeT>
-    const std::vector<size_t> &Graph<VertexT, EdgeT>::GetNextEdges() const {
+    std::span<const size_t> Graph<VertexT, EdgeT>::GetNextEdges() const {
         return nextEdges_;
     }
 
     template <typename VertexT, typename EdgeT>
-    const std::vector<size_t> &Graph<VertexT, EdgeT>::GetPrevEdges() const {
+    std::span<const size_t> Graph<VertexT, EdgeT>::GetPrevEdges() const {
         return prevEdges_;
     }
 
@@ -324,12 +325,14 @@ namespace graph {
     template <typename VertexT, typename EdgeT>
     void Graph<VertexT, EdgeT>::AddVertexToTable(size_t vertexIndex) {
         indices_[vertexIndex  - 1U] = 0U;
+        //std::cerr << vertexIndex << " " << std::endl;
     }
 
     template <typename VertexT, typename EdgeT>
     void Graph<VertexT, EdgeT>::AddVertexToTable(size_t vertexIndex, const VertexT &val) {
         indices_[vertexIndex  - 1U] = 0U;
         vertices_[vertexIndex  - 1U] = val;
+        //std::cerr << vertexIndex << " " << std::endl;
     }
 
     template <typename VertexT, typename EdgeT>
