@@ -2,16 +2,18 @@
 
 #include <initializer_list>
 #include <vector>
-#include <utility>      // for pair
-#include <iomanip>      // for print
+#include <utility>          // for pair
+#include <iomanip>          // for print
 #include <iostream>
-#include <algorithm>    // for max
-#include <queue>        // for BFS
+#include <algorithm>        // for max
+#include <queue>            // for BFS
+#include <stack>            // for DFS
 #include <tuple>
 #include <cassert>
 #include <span>
 #include <concepts>
 #include <iterator>
+#include <set>
 
 namespace graph {
     namespace details {
@@ -63,11 +65,12 @@ namespace graph {
 
     template <typename VertexT, typename EdgeT>
     class Graph final {
+    public:
         using VertexIndex = size_t;
         using VertexPair = std::pair<VertexIndex, VertexIndex>;
         using VertexPairWithEdge = std::tuple<VertexIndex, VertexIndex, EdgeT>;
-
     public:
+
         Graph() = default;
         
         Graph(const std::initializer_list<VertexPair> &data) {
@@ -141,37 +144,6 @@ namespace graph {
             FillTable();
         }
 
-        template <typename Visitor>
-        void DepthFirstSearch(Visitor &visitor) const {
-            std::vector<details::Color> colors{verticesCount_, details::Color::White};
-            
-            for (size_t i = 0; i < verticesCount_; ++i) {
-                if (colors[i] == details::Color::White)
-                    DepthFirstSearch(visitor, colors, i);
-            }
-        }
-
-        template <typename Visitor>
-        void BreadthFirstSearch(Visitor &visitor) const {
-            std::vector<details::Color> colors{verticesCount_, details::Color::White};
-            
-            std::queue<size_t> queue;
-            queue.push(0);
-            colors[0] = details::Color::Black;
-
-            while (!queue.empty()) {
-                size_t current = queue.front();
-                queue.pop();
-                colors[current] = details::Color::Black;
-
-                visitor.VisitVertex(current, *this);
-                for (auto &&neighbour : GetNeighboringVertices(current)) {
-                    if (colors[neighbour - 1U] == details::Color::White)
-                        queue.push(neighbour - 1U);
-                }
-            }
-        }
-
         std::vector<size_t> GetNeighboringVertices(size_t vertexIndex) const {
             if (vertexIndex > verticesCount_) {
                 throw std::out_of_range("Indices vector out of range");
@@ -211,19 +183,6 @@ namespace graph {
     private:
         std::ostream &Print(std::ostream &out) const;
         std::istream &Read(std::istream &in);
-        
-        template <typename Visitor>
-        void DepthFirstSearch(Visitor &visitor, std::vector<details::Color> &colors, size_t vertexIndex) const {
-            colors[vertexIndex] = details::Color::Gray;
-            visitor.VisitVertex(vertexIndex, *this);
-
-            for (auto &&neighbour : GetNeighboringVertices(vertexIndex)) {
-                if (colors[neighbour - 1U] == details::Color::White)
-                    DepthFirstSearch(visitor, colors, neighbour - 1U);
-            }
-
-            colors[vertexIndex] = details::Color::Black;
-        }
 
         void FillTable();
         void SetNextAndPrevEdges();
@@ -377,4 +336,57 @@ namespace graph {
         assert(indices_.size() == length_);
     }
 
+    template <typename GraphT, typename Visitor>
+    std::set<typename GraphT::VertexIndex> DoDepthFirstSearch(const GraphT &graph, typename GraphT::VertexIndex startVertex, Visitor &visitor) {
+        std::vector<details::Color> colors{graph.GetVerticesCount(), details::Color::White};
+        std::stack<typename GraphT::VertexIndex> stack;
+        std::set<typename GraphT::VertexIndex> marked;
+
+        stack.push(startVertex);
+        colors[startVertex] = details::Color::Gray;
+
+        while (!stack.empty()) {
+            auto &&current = stack.top();
+            stack.pop();
+            marked.insert(current);
+
+            if (colors[current] == details::Color::Gray) {
+                colors[current] = details::Color::Black;
+                visitor.VisitVertex(current, graph);
+                
+                for (auto &&neighbour : graph.GetNeighboringVertices(current)) {
+                    if (colors[neighbour - 1U] == details::Color::White) {
+                        stack.push(neighbour - 1U);
+                        colors[neighbour - 1U] = details::Color::Gray;
+                    }
+                }
+            }
+        }
+
+        return marked;
+    }
+
+    template <typename GraphT, typename Visitor>
+    std::set<typename GraphT::VertexIndex> DoBreadthFirstSearch(const GraphT &graph, typename GraphT::VertexIndex startVertex, Visitor &visitor) {
+        std::vector<details::Color> colors{graph.GetVerticesCount(), details::Color::White};    
+        std::queue<typename GraphT::VertexIndex> queue;
+        std::set<typename GraphT::VertexIndex> marked;
+
+        queue.push(startVertex);
+
+        while (!queue.empty()) {
+            auto &&current = queue.front();
+            queue.pop();
+            colors[current] = details::Color::Black;
+            marked.insert(current);
+
+            visitor.VisitVertex(current, graph);
+            for (auto &&neighbour : graph.GetNeighboringVertices(current)) {
+                if (colors[neighbour - 1U] == details::Color::White)
+                    queue.push(neighbour - 1U);
+            }
+        }
+
+        return marked;
+    }
 }; // namespace graph
