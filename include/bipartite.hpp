@@ -3,6 +3,7 @@
 #include "graph.hpp"
 #include <map>
 #include <unordered_set>
+#include <set>
 
 namespace graph {
 
@@ -90,16 +91,24 @@ namespace graph {
     public:
         BipartiteChecker(BipartiteVisitor<VertexT, EdgeT> &visitor) : visitor_(visitor) {}
 
-        bool isBipartite(const Graph<VertexT, EdgeT> &graph, CheckingPolicy policy) const {
-            switch (policy) {
-                case CheckingPolicy::BFS:
-                    graph.BreadthFirstSearch(visitor_);
-                    break;
-                case CheckingPolicy::DFS:
-                    graph.DepthFirstSearch(visitor_);
-                    break;
-                default:
-                    throw std::logic_error("Incorrect checking policy");
+        bool isBipartite(const Graph<VertexT, EdgeT> &graph, CheckingPolicy policy) {
+            size_t verticesCount = graph.GetVerticesCount();
+            std::set<size_t> marked{verticesCount};
+
+            auto &&searchFunction = (policy == CheckingPolicy::BFS) ?\
+                DoBreadthFirstSearch<Graph<VertexT, EdgeT>, BipartiteVisitor<VertexT, EdgeT>> :\
+                DoDepthFirstSearch<Graph<VertexT, EdgeT>, BipartiteVisitor<VertexT, EdgeT>>;
+
+            if (policy != CheckingPolicy::BFS && policy != CheckingPolicy::DFS) {
+                throw std::logic_error("Incorrect checking policy");
+            }
+
+            for (size_t i = 0; i < verticesCount; ++i) {
+                auto &&vertex = static_cast<typename Graph<VertexT, EdgeT>::VertexIndex>(i);
+                if (marked.count(vertex) == 0) {
+                    auto&& temp = searchFunction(graph, vertex, visitor_);
+                    marked.insert(temp.begin(), temp.end());
+                }
             }
             
             return visitor_.isBipartite();
