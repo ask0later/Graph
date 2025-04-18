@@ -11,9 +11,15 @@ TEST(GraphTest, GraphCtor1) {
     std::vector<size_t> v2{4, 5, 7, 11, 6, 8, 0, 9, 10, 12, 1, 13, 2, 3};
     std::vector<size_t> v3{6, 10, 12, 13, 0, 1, 4, 2, 5, 7, 8, 3, 9, 11};
     
-    ASSERT_EQ(graph.GetIndices(), v1);
-    ASSERT_EQ(graph.GetNextEdges(), v2);
-    ASSERT_EQ(graph.GetPrevEdges(), v3);
+    size_t i = 0;
+    for (auto &&elem : graph.GetIndices())
+        ASSERT_EQ(elem, v1[i++]); i = 0;
+    
+    for (auto &&elem : graph.GetNextEdges())
+        ASSERT_EQ(elem, v2[i++]); i = 0;
+    
+    for (auto &&elem : graph.GetPrevEdges())
+        ASSERT_EQ(elem, v3[i++]);
 }
 
 TEST(GraphTest, GraphCtor2) {
@@ -23,9 +29,15 @@ TEST(GraphTest, GraphCtor2) {
     std::vector<size_t> v2{4, 5, 7, 3, 6, 1, 0, 2};
     std::vector<size_t> v3{6, 5, 7, 3, 0, 1, 4, 2};
     
-    ASSERT_EQ(graph.GetIndices(), v1);
-    ASSERT_EQ(graph.GetNextEdges(), v2);
-    ASSERT_EQ(graph.GetPrevEdges(), v3);
+    size_t i = 0;
+    for (auto &&elem : graph.GetIndices())
+        ASSERT_EQ(elem, v1[i++]); i = 0;
+    
+    for (auto &&elem : graph.GetNextEdges())
+        ASSERT_EQ(elem, v2[i++]); i = 0;
+    
+    for (auto &&elem : graph.GetPrevEdges())
+        ASSERT_EQ(elem, v3[i++]);
 }
 
 TEST(GraphTest, GraphCtor3) {
@@ -42,13 +54,24 @@ TEST(GraphTest, GraphCtor3) {
     std::vector<size_t> v2{4, 5, 7, 11, 6, 8, 0, 9, 10, 12, 1, 13, 2, 3};
     std::vector<size_t> v3{6, 10, 12, 13, 0, 1, 4, 2, 5, 7, 8, 3, 9, 11};
     
-    ASSERT_EQ(graph1.GetIndices(), v1);
-    ASSERT_EQ(graph1.GetNextEdges(), v2);
-    ASSERT_EQ(graph1.GetPrevEdges(), v3);
+    size_t i = 0;
+    for (auto &&elem : graph1.GetIndices())
+        ASSERT_EQ(elem, v1[i++]); i = 0;
+    
+    for (auto &&elem : graph1.GetNextEdges())
+        ASSERT_EQ(elem, v2[i++]); i = 0;
+    
+    for (auto &&elem : graph1.GetPrevEdges())
+        ASSERT_EQ(elem, v3[i++]); i = 0;
 
-    ASSERT_EQ(graph2.GetIndices(), v1);
-    ASSERT_EQ(graph2.GetNextEdges(), v2);
-    ASSERT_EQ(graph2.GetPrevEdges(), v3);
+    for (auto &&elem : graph2.GetIndices())
+        ASSERT_EQ(elem, v1[i++]); i = 0;
+    
+    for (auto &&elem : graph2.GetNextEdges())
+        ASSERT_EQ(elem, v2[i++]); i = 0;
+    
+    for (auto &&elem : graph2.GetPrevEdges())
+        ASSERT_EQ(elem, v3[i++]); i = 0;
 }
 
 TEST(GraphTest, GraphCtor4) {
@@ -65,13 +88,24 @@ TEST(GraphTest, GraphCtor4) {
     std::vector<size_t> v2{4, 5, 7, 11, 6, 8, 0, 9, 10, 12, 1, 13, 2, 3};
     std::vector<size_t> v3{6, 10, 12, 13, 0, 1, 4, 2, 5, 7, 8, 3, 9, 11};
     
-    ASSERT_EQ(graph1.GetIndices(), v1);
-    ASSERT_EQ(graph1.GetNextEdges(), v2);
-    ASSERT_EQ(graph1.GetPrevEdges(), v3);
+    size_t i = 0;
+    for (auto &&elem : graph1.GetIndices())
+        ASSERT_EQ(elem, v1[i++]); i = 0;
+    
+    for (auto &&elem : graph1.GetNextEdges())
+        ASSERT_EQ(elem, v2[i++]); i = 0;
+    
+    for (auto &&elem : graph1.GetPrevEdges())
+        ASSERT_EQ(elem, v3[i++]); i = 0;
 
-    ASSERT_EQ(graph2.GetIndices(), v1);
-    ASSERT_EQ(graph2.GetNextEdges(), v2);
-    ASSERT_EQ(graph2.GetPrevEdges(), v3);
+    for (auto &&elem : graph2.GetIndices())
+        ASSERT_EQ(elem, v1[i++]); i = 0;
+    
+    for (auto &&elem : graph2.GetNextEdges())
+        ASSERT_EQ(elem, v2[i++]); i = 0;
+    
+    for (auto &&elem : graph2.GetPrevEdges())
+        ASSERT_EQ(elem, v3[i++]); i = 0;
 }
 
 TEST(GraphTest, GraphBipartiteBFS1) {
