@@ -14,6 +14,9 @@
 #include <concepts>
 #include <iterator>
 #include <set>
+#include <numeric>
+#include <memory>
+#include <optional>
 
 namespace graph {
     namespace details {
@@ -25,44 +28,54 @@ namespace graph {
     template <typename T>
     class Vertex final {
     public:
-        Vertex(T data) : data_(data) {}
+        Vertex(std::nullopt_t) : data_(std::nullopt) {}
 
-        void Set(T data) {
-            data_ = data;
-        }
+        template <typename ... Args>
+        Vertex(Args ... args) : data_(std::make_unique<T>(std::forward<Args>(args)...)) {}
 
-        T Get() const {
-            return data_;
+        std::optional<T*> Get() const {
+            return (data_.has_value()) ? data_.value().get() : std::nullopt;
         }
     private:
-        T data_;
+        std::optional<std::unique_ptr<T>> data_;
     }; // class Vertex
 
     template <typename T>
     class Edge final {
     public:
-        Edge(T data, size_t fVertex = 0, size_t sVertex = 0) : data_(data), fVertex_(fVertex), sVertex_(sVertex) {}
+        Edge(size_t fVertex, size_t sVertex, std::nullopt_t) 
+        : fVertex_(fVertex), sVertex_(sVertex), data_(std::nullopt) {}
 
-        void Set(T data) {
-            data_ = data;
+        template <typename ... Args>
+        Edge(size_t fVertex, size_t sVertex, Args ... args)
+            : fVertex_(fVertex), sVertex_(sVertex), data_(std::make_unique<T>(std::forward<Args>(args)...)) {}
+
+        std::optional<T*> Get() const {
+            return (data_.has_value()) ? data_.value().get() : std::nullopt;
         }
 
-        T Get() const {
-            return data_;
-        }
-
-        size_t GetFirstVertex() const {
-            return fVertex_;
-        }
-
-        size_t GetSecondVertex() const {
-            return sVertex_;
+        template <size_t index>
+        size_t get() {
+            if constexpr (index == 0) return fVertex_;
+            else if constexpr (index == 1) return sVertex_;
         }
     private:
-        T data_;
-        size_t fVertex_, sVertex_;
+        std::optional<std::unique_ptr<T>> data_;
+        size_t fVertex_ = 0, sVertex_ = 0;
     }; // class Edge
+} // namespace graph
 
+namespace std {
+    template <typename T>
+    struct tuple_size<graph::Edge<T>> : integral_constant<size_t, 2> {};
+
+    template <size_t index, typename T>
+    struct tuple_element<index, graph::Edge<T>> {
+        using type = size_t;
+    };
+} // namespace std
+
+namespace graph {
     template <typename VertexT, typename EdgeT>
     class Graph final {
     public:
@@ -70,12 +83,11 @@ namespace graph {
         using VertexPair = std::pair<VertexIndex, VertexIndex>;
         using VertexPairWithEdge = std::tuple<VertexIndex, VertexIndex, EdgeT>;
     public:
-
         Graph() = default;
         
         Graph(const std::initializer_list<VertexPair> &data) {
             for (auto &&pair : data) {
-                edges_.emplace_back(EdgeT(), pair.first, pair.second);
+                edges_.emplace_back(pair.first, pair.second, std::nullopt);
                 verticesCount_ = std::max(verticesCount_, std::max(pair.first, pair.second));                
             }
 
@@ -86,7 +98,7 @@ namespace graph {
         Graph(const std::initializer_list<VertexPairWithEdge> &data) {
             for (auto &&tuple : data) {
                 auto fVertexIndex = std::get<0>(tuple), sVertexIndex = std::get<1>(tuple);
-                edges_.emplace_back(std::get<EdgeT>(tuple), fVertexIndex, sVertexIndex);
+                edges_.emplace_back(fVertexIndex, sVertexIndex, std::get<EdgeT>(tuple));
                 verticesCount_ = std::max(verticesCount_, std::max(fVertexIndex, sVertexIndex));
             }
             
@@ -98,7 +110,7 @@ namespace graph {
         requires std::is_same_v<std::iter_value_t<Iterator>, VertexPair>
         Graph(Iterator begin, Iterator end) {
             for (auto it = begin; it != end; ++it) {
-                edges_.emplace_back(EdgeT(), it->first, it->second);
+                edges_.emplace_back(it->first, it->second, std::nullopt);
                 verticesCount_ = std::max(verticesCount_, std::max(it->first, it->second));                
             }
 
@@ -111,7 +123,7 @@ namespace graph {
         Graph(Iterator begin, Iterator end) {
             for (auto it = begin; it != end; ++it) {
                 auto fVertexIndex = std::get<0>(*it), sVertexIndex = std::get<1>(*it);
-                edges_.emplace_back(std::get<EdgeT>(*it), fVertexIndex, sVertexIndex);
+                edges_.emplace_back(fVertexIndex, sVertexIndex, std::get<EdgeT>(*it));
                 verticesCount_ = std::max(verticesCount_, std::max(fVertexIndex, sVertexIndex));
             }
 
@@ -123,7 +135,7 @@ namespace graph {
         requires std::is_same_v<std::iter_value_t<typename Container::iterator>, VertexPair>
         Graph(const Container &data) {
             for (auto &&pair : data) {
-                edges_.emplace_back(EdgeT(), pair.first, pair.second);
+                edges_.emplace_back(pair.first, pair.second, std::nullopt);
                 verticesCount_ = std::max(verticesCount_, std::max(pair.first, pair.second));                
             }
 
@@ -136,7 +148,7 @@ namespace graph {
         Graph(const Container &data) {
             for (auto &&tuple : data) {
                 auto fVertexIndex = std::get<0>(tuple), sVertexIndex = std::get<1>(tuple);
-                edges_.emplace_back(std::get<EdgeT>(tuple), fVertexIndex, sVertexIndex);
+                edges_.emplace_back(fVertexIndex, sVertexIndex, std::get<EdgeT>(tuple));
                 verticesCount_ = std::max(verticesCount_, std::max(fVertexIndex, sVertexIndex));
             }
 
@@ -176,10 +188,18 @@ namespace graph {
             return verticesCount_;
         }
         
-        std::span<const size_t> GetIndices() const;
-        std::span<const size_t> GetNextEdges() const;
-        std::span<const size_t> GetPrevEdges() const;
-    
+        std::span<const size_t> GetIndices() const {
+            return indices_;
+        }
+
+        std::span<const size_t> GetNextEdges() const {
+            return nextEdges_;
+        }
+
+        std::span<const size_t> GetPrevEdges() const {
+            return prevEdges_;
+        }
+
     private:
         std::ostream &Print(std::ostream &out) const;
         std::istream &Read(std::istream &in);
@@ -188,7 +208,7 @@ namespace graph {
         void SetNextAndPrevEdges();
         void AddVertexToTable(size_t vertexIndex);
         void AddVertexToTable(size_t vertexIndex, const VertexT &val);
-        void AddEdgeToTable(std::pair<size_t, size_t> &&verticesPair);
+        void AddEdgeToTable(VertexPair &&verticesPair);
 
         size_t length_ = 0;
         size_t verticesCount_ = 0;
@@ -202,7 +222,7 @@ namespace graph {
     }; // class Graph
  
     template <typename VertexT, typename EdgeT>
-    std::ostream &Graph<VertexT, EdgeT>::Print(std::ostream &out) const {
+    inline std::ostream &Graph<VertexT, EdgeT>::Print(std::ostream &out) const {
         constexpr int width = 5;
 
         for (size_t i = 0; i < length_; ++i)
@@ -221,11 +241,12 @@ namespace graph {
     }
 
     template <typename VertexT, typename EdgeT>
-    std::istream &Graph<VertexT, EdgeT>::Read(std::istream &in) {
+    inline std::istream &Graph<VertexT, EdgeT>::Read(std::istream &in) {
         int fVertexIndex = 0, sVertexIndex = 0;
-        int edgeWeight = 0;
+        EdgeT edgeWeight = 0;
         std::string str;
         char dummy;
+
         while (!in.eof()) {
             if (!(in >> fVertexIndex >> str >> sVertexIndex >> dummy >> edgeWeight &&
                 str == "--" && dummy == ','))
@@ -236,7 +257,7 @@ namespace graph {
             
             in >> std::ws;
 
-            edges_.emplace_back(edgeWeight ,fVertexIndex, sVertexIndex);
+            edges_.emplace_back(fVertexIndex, sVertexIndex, edgeWeight);
             verticesCount_ = std::max(verticesCount_, static_cast<size_t>(std::max(fVertexIndex, sVertexIndex))); 
         }
         
@@ -246,22 +267,7 @@ namespace graph {
     }
 
     template <typename VertexT, typename EdgeT>
-    std::span<const size_t> Graph<VertexT, EdgeT>::GetIndices() const {
-        return indices_;
-    }
-
-    template <typename VertexT, typename EdgeT>
-    std::span<const size_t> Graph<VertexT, EdgeT>::GetNextEdges() const {
-        return nextEdges_;
-    }
-
-    template <typename VertexT, typename EdgeT>
-    std::span<const size_t> Graph<VertexT, EdgeT>::GetPrevEdges() const {
-        return prevEdges_;
-    }
-
-    template <typename VertexT, typename EdgeT>
-    void Graph<VertexT, EdgeT>::SetNextAndPrevEdges() {
+    inline void Graph<VertexT, EdgeT>::SetNextAndPrevEdges() {
         for (size_t i = verticesCount_, j = length_ - 1; i < length_; ++i, --j) {
             size_t tmp = indices_[i] - 1U;
 
@@ -282,44 +288,43 @@ namespace graph {
     }
 
     template <typename VertexT, typename EdgeT>
-    void Graph<VertexT, EdgeT>::AddVertexToTable(size_t vertexIndex) {
+    inline void Graph<VertexT, EdgeT>::AddVertexToTable(size_t vertexIndex) {
         indices_[vertexIndex  - 1U] = 0U;
-        //std::cerr << vertexIndex << " " << std::endl;
     }
 
     template <typename VertexT, typename EdgeT>
-    void Graph<VertexT, EdgeT>::AddVertexToTable(size_t vertexIndex, const VertexT &val) {
+    inline void Graph<VertexT, EdgeT>::AddVertexToTable(size_t vertexIndex, const VertexT &val) {
         indices_[vertexIndex  - 1U] = 0U;
         vertices_[vertexIndex  - 1U] = val;
-        //std::cerr << vertexIndex << " " << std::endl;
     }
 
     template <typename VertexT, typename EdgeT>
-    void Graph<VertexT, EdgeT>::AddEdgeToTable(std::pair<size_t, size_t> &&verticesPair) {
+    inline void Graph<VertexT, EdgeT>::AddEdgeToTable(VertexPair &&verticesPair) {
         indices_[verticesCount_ + curEdgesCount_] = verticesPair.first;
         indices_[verticesCount_ + curEdgesCount_ + 1U] = verticesPair.second;
         curEdgesCount_ += 2;
     }
 
     template <typename VertexT, typename EdgeT>
-    void Graph<VertexT, EdgeT>::FillTable() {
+    inline void Graph<VertexT, EdgeT>::FillTable() {
         verticesCount_ += (verticesCount_ % 2);
         length_ = verticesCount_ + 2 * edgesCount_;
         
         indices_.resize(length_);
-        vertices_.resize(verticesCount_, Vertex(VertexT()));
+        vertices_.reserve(verticesCount_);
+        
+        for (size_t i = 0; i < verticesCount_; ++i) {
+            vertices_.emplace_back(std::nullopt);
+        }
+
         nextEdges_.resize(length_);
         prevEdges_.resize(length_);
 
         AddVertexToTable(verticesCount_);
-        for (size_t i = 0; i < verticesCount_; ++i) {
-            nextEdges_[i] = i;
-            prevEdges_[i] = i;
-        }
+        std::iota(nextEdges_.begin(), nextEdges_.end(), 0);
+        std::iota(prevEdges_.begin(), prevEdges_.end(), 0);
         
-        for (auto &&edge : edges_) {
-            size_t fVertexIndex = edge.GetFirstVertex(), \
-            sVertexIndex = edge.GetSecondVertex();
+        for (auto &&[fVertexIndex, sVertexIndex] : edges_) {
             AddVertexToTable(fVertexIndex);
             AddVertexToTable(sVertexIndex);
             AddEdgeToTable({fVertexIndex, sVertexIndex});
