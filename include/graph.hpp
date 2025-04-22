@@ -17,6 +17,7 @@
 #include <numeric>
 #include <memory>
 #include <optional>
+#include <regex>
 
 namespace graph {
     namespace details {
@@ -242,23 +243,27 @@ namespace graph {
 
     template <typename VertexT, typename EdgeT>
     inline std::istream &Graph<VertexT, EdgeT>::Read(std::istream &in) {
-        int fVertexIndex = 0, sVertexIndex = 0;
-        EdgeT edgeWeight = 0;
-        std::string str;
-        char dummy;
+        VertexIndex fVertexIndex = 0, sVertexIndex = 0;
+        EdgeT edgeWeight = 0;        
+        std::regex pattern(R"(^\s*(\d+)\s*--\s*(\d+)\s*,\s*(\d+)\s*$)");
+        std::string input;
 
-        while (!in.eof()) {
-            if (!(in >> fVertexIndex >> str >> sVertexIndex >> dummy >> edgeWeight &&
-                str == "--" && dummy == ','))
+        while (std::getline(in, input)) {
+            if (input.empty())
+                continue;
+        
+            std::smatch matches;
+            if (!std::regex_match(input, matches, pattern))
                 throw std::runtime_error("Incorrect input");
-
-            if (fVertexIndex <= 0 || sVertexIndex <= 0)
+        
+            std::string first_number = matches[1].str(), second_number = matches[2].str(), weight = matches[2].str();
+            if (first_number[0] == '-' || second_number[0] == '-' || weight[0] == '-')
                 throw std::runtime_error("Vertex index must be greater than zero");
-            
-            in >> std::ws;
+
+            fVertexIndex = std::stoull(first_number), sVertexIndex = std::stoull(second_number), edgeWeight = std::stoull(weight);
 
             edges_.emplace_back(fVertexIndex, sVertexIndex, edgeWeight);
-            verticesCount_ = std::max(verticesCount_, static_cast<size_t>(std::max(fVertexIndex, sVertexIndex))); 
+            verticesCount_ = std::max(verticesCount_, std::max(fVertexIndex, sVertexIndex)); 
         }
         
         edgesCount_ = edges_.size();
